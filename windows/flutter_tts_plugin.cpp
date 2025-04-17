@@ -227,6 +227,7 @@ namespace {
 				return;
 			}
 			addMplayer();
+		}
 		catch (winrt::hresult_error const& ex)
 		{
 			isAvailable = false;
