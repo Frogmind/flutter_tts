@@ -54,6 +54,7 @@ namespace {
 		SpeechSynthesizer synth;
 		winrt::Windows::Media::Playback::MediaPlayer mPlayer;
 		bool isPaused;
+		bool isAvailable = false;
 		bool isSpeaking;
 		bool awaitSpeakCompletion;
 		FlutterResult speakResult;
@@ -216,15 +217,29 @@ namespace {
 
 
 	FlutterTtsPlugin::FlutterTtsPlugin() {
-		synth = SpeechSynthesizer();
-		addMplayer();
+		try
+    		{
+			synth = SpeechSynthesizer();
+			auto voices = synth.AllVoices();
+			if (voices.Size() == 0)
+		        {
+				isAvailable = false;
+				return;
+			}
+			addMplayer();
+		catch (winrt::hresult_error const& ex)
+		{
+			isAvailable = false;
+			return;
+		}
+		isAvailable = true;
 		isPaused = false;
 		isSpeaking = false;
 		awaitSpeakCompletion = false;
 		speakResult = FlutterResult();
 	}
 
-	FlutterTtsPlugin::~FlutterTtsPlugin() { mPlayer.Close(); }
+	FlutterTtsPlugin::~FlutterTtsPlugin() { if (isAvailable) mPlayer.Close(); }
 
 	void FlutterTtsPlugin::HandleMethodCall(
 		const flutter::MethodCall<flutter::EncodableValue>& method_call,
@@ -271,6 +286,7 @@ namespace {
 		ISpVoice* pVoice;
 		bool awaitSpeakCompletion = false;
 		bool isPaused;
+		bool isAvailable = false;
 		double pitch;
 		bool speaking();
 		bool paused();
@@ -302,14 +318,17 @@ namespace {
 		hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 		if (FAILED(hr))
 		{
+			isAvailable = false;
 			throw std::exception("TTS init failed");
 		}
 
 		hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
 		if (FAILED(hr))
 		{
+			isAvailable = false;
 			throw std::exception("TTS create instance failed");
 		}
+		isAvailable = true;
 		pitch = 0;
 	}
 
@@ -565,6 +584,7 @@ namespace {
             else result->Success(0);
         }
 		else if (method_call.method_name().compare("speak") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			if (isPaused) { continuePlay(); result->Success(1); return; }
 			const flutter::EncodableValue arg = method_call.arguments()[0];
 			if (std::holds_alternative<std::string>(arg)) {
@@ -577,10 +597,12 @@ namespace {
 			else result->Success(0);
 		}
 		else if (method_call.method_name().compare("pause") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			FlutterTtsPlugin::pause();
 			result->Success(1);
 		}
 		else if (method_call.method_name().compare("setLanguage") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			const flutter::EncodableValue arg = method_call.arguments()[0];
 			if (std::holds_alternative<std::string>(arg)) {
 				const std::string lang = std::get<std::string>(arg);
@@ -589,6 +611,7 @@ namespace {
 			else result->Success(0);
 		}
 		else if (method_call.method_name().compare("setVolume") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			const flutter::EncodableValue arg = method_call.arguments()[0];
 			if (std::holds_alternative<double>(arg)) {
 				const double newVolume = std::get<double>(arg);
@@ -599,6 +622,7 @@ namespace {
 
 		}
 		else if (method_call.method_name().compare("setSpeechRate") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			const flutter::EncodableValue arg = method_call.arguments()[0];
 			if (std::holds_alternative<double>(arg)) {
 				const double newRate = std::get<double>(arg);
@@ -609,6 +633,7 @@ namespace {
 
 		}
         else if (method_call.method_name().compare("setPitch") == 0) {
+	    if (!isAvailable) { result->Success(0); return; }
             const flutter::EncodableValue arg = method_call.arguments()[0];
             if (std::holds_alternative<double>(arg)) {
                 const double newPitch = std::get<double>(arg);
@@ -618,6 +643,7 @@ namespace {
             else result->Success(0);
         }
 		else if (method_call.method_name().compare("setVoice") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			const flutter::EncodableValue arg = method_call.arguments()[0];
 			if (std::holds_alternative<flutter::EncodableMap>(arg)) {
 				const flutter::EncodableMap voiceInfo = std::get<flutter::EncodableMap>(arg);
@@ -632,16 +658,19 @@ namespace {
 			else result->Success(0);
 		}
 		else if (method_call.method_name().compare("stop") == 0) {
+			if (!isAvailable) { result->Success(0); return; }
 			stop();
 			result->Success(1);
 		}
 		else if (method_call.method_name().compare("getLanguages") == 0) {
 			flutter::EncodableList l;
+			if (!isAvailable) { result->Success(l); return; }
 			getLanguages(l);
 			result->Success(l);
 		}
 		else if (method_call.method_name().compare("getVoices") == 0) {
 			flutter::EncodableList l;
+			if (!isAvailable) { result->Success(l); return; }
 			getVoices(l);
 			result->Success(l);
 		}
