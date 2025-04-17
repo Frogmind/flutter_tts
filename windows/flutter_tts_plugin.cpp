@@ -240,7 +240,7 @@ namespace {
 		speakResult = FlutterResult();
 	}
 
-	FlutterTtsPlugin::~FlutterTtsPlugin() { if (isAvailable) mPlayer.Close(); }
+	FlutterTtsPlugin::~FlutterTtsPlugin() { if (isAvailable) { mPlayer.Close(); } }
 
 	void FlutterTtsPlugin::HandleMethodCall(
 		const flutter::MethodCall<flutter::EncodableValue>& method_call,
