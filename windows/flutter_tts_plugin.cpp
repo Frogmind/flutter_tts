@@ -51,7 +51,7 @@ namespace {
 		winrt::Windows::Foundation::IAsyncAction asyncSpeak(const std::string);
 		bool speaking();
 		bool paused();
-		SpeechSynthesizer synth;
+		SpeechSynthesizer synth { nullptr };
 		winrt::Windows::Media::Playback::MediaPlayer mPlayer;
 		bool isPaused;
 		bool isAvailable = false;
@@ -218,7 +218,7 @@ namespace {
 
 	FlutterTtsPlugin::FlutterTtsPlugin() {
 		try
-    		{
+    	{
 			synth = SpeechSynthesizer();
 			auto voices = synth.AllVoices();
 			if (voices.Size() == 0)
