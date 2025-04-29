@@ -220,6 +220,10 @@ namespace {
 		try
     	{
 			synth = SpeechSynthesizer();
+			if (!synth) {
+				isAvailable = false;
+				return;
+			}
 			auto voices = synth.AllVoices();
 			if (voices.Size() == 0)
 		        {
